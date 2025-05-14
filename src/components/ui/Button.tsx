@@ -1,34 +1,36 @@
-import type { ReactNode, ButtonHTMLAttributes } from 'react';
-import { motion } from 'framer-motion';
+import type { ReactNode } from 'react';
+import { motion, type HTMLMotionProps } from 'framer-motion';
 import styled from 'styled-components';
 
-interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag' | 'onDragStart' | 'onDragEnd'> {
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'success' | 'error' | 'ghost';
+type ButtonSize = 'small' | 'medium' | 'large';
+
+interface ButtonProps extends HTMLMotionProps<'button'> {
   children: ReactNode;
-  variant?: 'primary' | 'secondary' | 'outline' | 'success' | 'error' | 'ghost';
-  size?: 'small' | 'medium' | 'large';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   fullWidth?: boolean;
   icon?: ReactNode;
+  $hasIcon?: boolean;
 }
 
-const StyledButton = styled(motion.button)<{
-  variant: 'primary' | 'secondary' | 'outline' | 'success' | 'error' | 'ghost';
-  size: 'small' | 'medium' | 'large';
-  fullWidth: boolean;
-  $hasIcon: boolean;
-}>`
+const StyledButton = styled(motion.button)<ButtonProps>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: ${props => props.$hasIcon ? '0.5rem' : '0'};
-  font-weight: 600;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
   cursor: pointer;
-  border-radius: 0.5rem;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  width: ${(props) => (props.fullWidth ? '100%' : 'auto')};
-  
-  /* Размеры кнопок */
-  ${props => {
-    switch (props.size) {
+  border: none;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+
+  /* Размеры */
+  ${({ size }) => {
+    switch (size) {
       case 'small':
         return `
           padding: 0.5rem 1rem;
@@ -36,119 +38,87 @@ const StyledButton = styled(motion.button)<{
         `;
       case 'large':
         return `
-          padding: 0.875rem 1.75rem;
+          padding: 0.75rem 1.5rem;
           font-size: 1.125rem;
         `;
-      default: // medium
+      default:
         return `
-          padding: 0.75rem 1.5rem;
+          padding: 0.625rem 1.25rem;
           font-size: 1rem;
         `;
     }
   }}
-  
-  /* Типы кнопок */
-  ${(props) => {
-    switch (props.variant) {
-      case 'primary':
-        return `
-          background-color: var(--primary);
-          color: white;
-          border: none;
-          box-shadow: 0 2px 10px rgba(66, 99, 235, 0.2);
-          &:hover {
-            background-color: var(--primary-hover);
-            box-shadow: 0 4px 15px rgba(66, 99, 235, 0.3);
-            transform: translateY(-2px);
-          }
-          &:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 5px rgba(66, 99, 235, 0.2);
-          }
-        `;
+
+  /* Варианты */
+  ${({ variant }) => {
+    switch (variant) {
       case 'secondary':
         return `
           background-color: var(--secondary);
-          color: #212529;
-          border: none;
-          box-shadow: 0 2px 10px rgba(252, 196, 25, 0.2);
+          color: var(--text);
           &:hover {
             background-color: var(--secondary-hover);
-            box-shadow: 0 4px 15px rgba(252, 196, 25, 0.3);
-            transform: translateY(-2px);
-          }
-          &:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 5px rgba(252, 196, 25, 0.2);
           }
         `;
       case 'outline':
         return `
           background-color: transparent;
-          color: var(--primary);
           border: 2px solid var(--primary);
+          color: var(--primary);
           &:hover {
-            background-color: rgba(66, 99, 235, 0.08);
-            transform: translateY(-2px);
-          }
-          &:active {
-            transform: translateY(0);
+            background-color: var(--primary);
+            color: white;
           }
         `;
       case 'success':
         return `
           background-color: var(--success);
           color: white;
-          border: none;
-          box-shadow: 0 2px 10px rgba(64, 192, 87, 0.2);
           &:hover {
-            background-color: #37b34a;
-            box-shadow: 0 4px 15px rgba(64, 192, 87, 0.3);
-            transform: translateY(-2px);
-          }
-          &:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 5px rgba(64, 192, 87, 0.2);
+            background-color: #00a884;
           }
         `;
       case 'error':
         return `
           background-color: var(--error);
           color: white;
-          border: none;
-          box-shadow: 0 2px 10px rgba(250, 82, 82, 0.2);
           &:hover {
-            background-color: #e03e3e;
-            box-shadow: 0 4px 15px rgba(250, 82, 82, 0.3);
-            transform: translateY(-2px);
-          }
-          &:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 5px rgba(250, 82, 82, 0.2);
+            background-color: #d15a3f;
           }
         `;
       case 'ghost':
         return `
           background-color: transparent;
           color: var(--text);
-          border: none;
           &:hover {
             background-color: rgba(0, 0, 0, 0.05);
           }
-          &:active {
-            background-color: rgba(0, 0, 0, 0.1);
-          }
         `;
       default:
-        return '';
+        return `
+          background-color: var(--primary);
+          color: white;
+          &:hover {
+            background-color: var(--primary-hover);
+          }
+        `;
     }
   }}
-  
+
+  /* Полная ширина */
+  ${({ fullWidth }) => fullWidth && `
+    width: 100%;
+  `}
+
+  /* Состояния */
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
 `;
 
@@ -168,8 +138,8 @@ export const Button = ({
       size={size}
       fullWidth={fullWidth}
       $hasIcon={!!icon}
-      whileHover={props.disabled ? {} : { scale: 1.02 }}
-      whileTap={props.disabled ? {} : { scale: 0.98 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       {...props}
     >
       {icon}

@@ -142,7 +142,7 @@ const item = {
 };
 
 export const HomePage = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <>
@@ -271,16 +271,16 @@ export const HomePage = () => {
           Присоединяйтесь к нашей платформе сегодня и откройте новые возможности
           для обучения или преподавания.
         </p>
-        <Button
-          as={Link}
-          to="/register"
-          variant="secondary"
-          size="large"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Зарегистрироваться бесплатно
-        </Button>
+        <Link to="/register" style={{ textDecoration: 'none' }}>
+          <Button
+            variant="secondary"
+            size="large"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Зарегистрироваться бесплатно
+          </Button>
+        </Link>
       </CTASection>
     </>
   );
