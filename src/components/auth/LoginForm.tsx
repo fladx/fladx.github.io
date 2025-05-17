@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Link } from 'react-router-dom';
@@ -54,6 +55,7 @@ const RegisterLink = styled.p`
 
 export const LoginForm = () => {
   const { login } = useAuth();
+  const { addNotification } = useNotification();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -61,6 +63,8 @@ export const LoginForm = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    console.log('Отправка формы входа:', { username, password });
     
     if (!username || !password) {
       setError('Пожалуйста, заполните все поля');
@@ -71,8 +75,15 @@ export const LoginForm = () => {
       setLoading(true);
       await login(username, password);
       // После успешного входа пользователь будет перенаправлен через AuthContext
-    } catch (err) {
-      setError('Неверное имя пользователя или пароль');
+    } catch (err: any) {
+      console.error('Ошибка входа:', err);
+      
+      if (err.message && (err.message.includes('Network Error') || err.message.includes('connection') || err.code === 'ERR_NETWORK')) {
+        setError('Сервер недоступен');
+        addNotification('error', 'Сервер недоступен. Пожалуйста, повторите попытку позже.', 8000);
+      } else {
+        setError('Неверное имя пользователя или пароль');
+      }
     } finally {
       setLoading(false);
     }

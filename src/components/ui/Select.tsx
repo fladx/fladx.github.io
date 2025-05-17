@@ -1,20 +1,18 @@
-import type { ChangeEvent } from 'react';
+import { type ChangeEvent, useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-
-interface SelectOption {
-  value: string;
-  label: string;
-}
 
 interface SelectProps {
   label: string;
   name: string;
   value: string;
   onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
-  options: SelectOption[];
+  options: { value: string; label: string }[];
+  placeholder?: string;
   error?: string;
   required?: boolean;
+  disabled?: boolean;
+  helpText?: string;
 }
 
 const SelectContainer = styled.div`
@@ -22,48 +20,122 @@ const SelectContainer = styled.div`
   flex-direction: column;
   margin-bottom: 1.5rem;
   width: 100%;
+  position: relative;
 `;
 
-const SelectLabel = styled.label`
+const SelectLabel = styled(motion.label)`
   font-size: 0.9rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #212529;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
+  letter-spacing: 0.02em;
 `;
 
 const RequiredMark = styled.span`
-  color: #FA5252;
+  color: var(--error);
   margin-left: 4px;
 `;
 
-const StyledSelect = styled.select<{ hasError: boolean }>`
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  border: 2px solid ${(props) => (props.hasError ? '#FA5252' : '#DEE2E6')};
+const SelectWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    right: 1rem;
+    top: calc(50% - 0.25rem);
+    width: 0.8rem;
+    height: 0.8rem;
+    border-bottom: 2px solid var(--text-secondary);
+    border-right: 2px solid var(--text-secondary);
+    pointer-events: none;
+    transform: rotate(45deg);
+    transition: all 0.2s ease;
+  }
+  
+  &:hover::after {
+    border-color: var(--text-primary);
+  }
+`;
+
+const StyledSelect = styled(motion.select)<{ hasError: boolean, disabled?: boolean }>`
+  padding: 0.75rem 1.25rem;
+  appearance: none;
+  border-radius: 10px;
+  border: 1.5px solid ${(props) => (props.hasError ? 'var(--error)' : 'var(--border)')};
   font-size: 1rem;
   width: 100%;
-  transition: all 0.2s ease;
-  background-color: #FFFFFF;
-  color: #212529;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1em;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+  box-shadow: ${(props) => (props.hasError ? '0 0 0 3px rgba(255, 87, 87, 0.15)' : '0 4px 10px rgba(0, 0, 0, 0.1)')};
+  backdrop-filter: blur(var(--blur-amount));
+  letter-spacing: 0.01em;
+  padding-right: 2.5rem;
+  cursor: pointer;
   
   &:focus {
     outline: none;
-    border-color: ${(props) => (props.hasError ? '#FA5252' : '#4263EB')};
-    box-shadow: 0 0 0 2px ${(props) => (props.hasError ? 'rgba(250, 82, 82, 0.2)' : 'rgba(66, 99, 235, 0.2)')};
+    border-color: ${(props) => (props.hasError ? 'var(--error)' : 'var(--primary)')};
+    box-shadow: 0 0 0 3px ${(props) => (props.hasError ? 'rgba(255, 87, 87, 0.2)' : 'rgba(66, 99, 235, 0.2)')};
+    background-color: var(--bg-light);
+  }
+  
+  &:hover:not(:focus):not(:disabled) {
+    border-color: ${(props) => (props.hasError ? 'var(--error)' : 'var(--primary-hover)')};
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:disabled {
+    background-color: var(--bg-medium);
+    cursor: not-allowed;
+    opacity: 0.7;
+    filter: grayscale(30%);
+  }
+  
+  option {
+    background-color: var(--bg-medium);
+    color: var(--text-primary);
+    padding: 0.75rem;
+    font-size: 1rem;
   }
 `;
 
 const ErrorText = styled(motion.p)`
-  color: #FA5252;
+  color: var(--error);
   font-size: 0.8rem;
   margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const HelpText = styled(motion.p)`
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  opacity: 0.8;
+`;
+
+const SelectHighlight = styled(motion.div)<{ isFocused: boolean, hasError: boolean }>`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: ${props => props.hasError ? 'var(--error)' : 'var(--gradient-secondary)'};
+  transition: width 0.25s ease-out;
+  border-radius: 0 0 4px 4px;
+  opacity: 0;
+  
+  ${props => props.isFocused && `
+    width: 100%;
+    opacity: 1;
+  `}
 `;
 
 export const Select = ({
@@ -72,40 +144,96 @@ export const Select = ({
   value,
   onChange,
   options,
+  placeholder,
   error,
   required = false,
+  disabled = false,
+  helpText,
 }: SelectProps) => {
+  const [isFocused, setIsFocused] = useState(false);
+
   return (
     <SelectContainer>
-      <SelectLabel htmlFor={name}>
-        {label}
-        {required && <RequiredMark>*</RequiredMark>}
-      </SelectLabel>
-      <StyledSelect
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        hasError={!!error}
-        required={required}
-      >
-        <option value="" disabled>
-          Выберите опцию...
-        </option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </StyledSelect>
+      {label && (
+        <SelectLabel 
+          htmlFor={name}
+          animate={{ 
+            color: error 
+              ? 'var(--error)' 
+              : isFocused 
+                ? 'var(--text-primary)' 
+                : 'var(--text-secondary)' 
+          }}
+          transition={{ duration: 0.2 }}
+        >
+          {label}
+          {required && <RequiredMark>*</RequiredMark>}
+        </SelectLabel>
+      )}
+      
+      <SelectWrapper>
+        <StyledSelect
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          hasError={!!error}
+          disabled={disabled}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          required={required}
+          initial={{ borderColor: error ? 'var(--error)' : 'var(--border)' }}
+          animate={{ 
+            borderColor: error 
+              ? 'var(--error)' 
+              : isFocused 
+                ? 'var(--primary)' 
+                : 'var(--border)',
+            boxShadow: isFocused 
+              ? error 
+                ? '0 0 0 3px rgba(255, 87, 87, 0.2)' 
+                : '0 0 0 3px rgba(66, 99, 235, 0.2)'
+              : error 
+                ? '0 0 0 3px rgba(255, 87, 87, 0.15)'
+                : '0 4px 10px rgba(0, 0, 0, 0.1)'
+          }}
+          transition={{ duration: 0.2 }}
+        >
+          {placeholder && (
+            <option value="" disabled>
+              {placeholder}
+            </option>
+          )}
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </StyledSelect>
+        <SelectHighlight 
+          isFocused={isFocused} 
+          hasError={!!error}
+        />
+      </SelectWrapper>
+      
       {error && (
         <ErrorText
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
         >
           {error}
         </ErrorText>
+      )}
+      
+      {helpText && !error && (
+        <HelpText
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.8 }}
+          transition={{ duration: 0.2 }}
+        >
+          {helpText}
+        </HelpText>
       )}
     </SelectContainer>
   );

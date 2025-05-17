@@ -5,9 +5,9 @@
   font-weight: 400;
 
   /* Светлая тема по умолчанию */
-  color-scheme: light;
-  color: #333;
-  background-color: #f7f9fc;
+  color-scheme: dark;
+  color: #e0e6f5;
+  background-color: #181a2a;
 
   /* Улучшенный рендеринг шрифтов */
   font-synthesis: none;
@@ -21,17 +21,21 @@
   --secondary: #64dfdf;
   --secondary-hover: #48b7b7;
   --accent: #6930c3;
-  --background: #f8f7ff;
-  --card-bg: #ffffff;
-  --text: #333;
-  --text-light: #495057;
-  --border: #E9ECEF;
+  --background: #181a2a;
+  --card-bg: #23243a;
+  --text: #e0e6f5;
+  --text-light: #b0b8d1;
+  --border: #23243a;
+  --gradient-primary: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
   --error: #FA5252;
   --success: #40C057;
+  --warning: #F59E0B;
   --info: #80ffdb;
   --footer-bg: #5e60ce;
   --footer-text: #ffffff;
   --transition-speed: 0.3s;
+  --bg-light: #23243a;
+  --bg-medium: #292b45;
 }
 
 * {
@@ -98,7 +102,8 @@ button:focus-visible {
 
 /* Глобальные стили для карточек */
 .card {
-  background-color: var(--card-bg);
+  background-color: rgba(35, 36, 58, 0.95);
+  color: var(--text);
   border-radius: 1rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
@@ -184,4 +189,8 @@ a.btn:active::after {
 
 .interactive:active {
   transform: translateY(0);
+}
+
+.read-the-docs {
+  color: #b0b8d1;
 }

@@ -11,4 +11,7 @@ export default defineConfig({
     },
   },
   base: '/',
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify('http://localhost:8080/api/v1'),
+  }
 })

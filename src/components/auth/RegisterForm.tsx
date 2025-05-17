@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Link } from 'react-router-dom';
@@ -10,7 +11,7 @@ const FormContainer = styled(motion.form)`
   width: 100%;
   max-width: 500px;
   padding: 2rem;
-  background-color: white;
+  background-color: var(--card-bg);
   border-radius: 1rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 `;
@@ -75,6 +76,7 @@ const InfoText = styled.p`
 
 export const RegisterForm = () => {
   const { register } = useAuth();
+  const { addNotification } = useNotification();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -135,8 +137,16 @@ export const RegisterForm = () => {
         formData.password
       );
       // После успешной регистрации пользователь будет перенаправлен через AuthContext
-    } catch (err) {
-      setError('Ошибка при регистрации. Возможно, имя пользователя уже занято');
+    } catch (err: any) {
+      console.error('Ошибка регистрации:', err);
+      
+      // Проверка на ошибку соединения с сервером
+      if (err.message && (err.message.includes('Network Error') || err.message.includes('connection') || err.code === 'ERR_NETWORK')) {
+        setError('Сервер недоступен');
+        addNotification('error', 'Сервер недоступен. Пожалуйста, повторите попытку позже.', 8000);
+      } else {
+        setError('Ошибка при регистрации. Возможно, имя пользователя уже занято');
+      }
     } finally {
       setLoading(false);
     }

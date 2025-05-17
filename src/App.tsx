@@ -1,68 +1,26 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider, useNotification } from './context/NotificationContext';
 import { Layout } from './components/layout/Layout';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { createGlobalStyle } from 'styled-components';
 import { AnimatePresence, motion } from 'framer-motion';
-
-const GlobalStyle = createGlobalStyle`
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-  }
-  
-  body {
-    background-color: var(--background);
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    width: 100%;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-  
-  #root {
-    width: 100%;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  a {
-    text-decoration: none;
-    color: inherit;
-  }
-  
-  /* Скроллбар */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: rgba(66, 99, 235, 0.3);
-    border-radius: 10px;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(66, 99, 235, 0.5);
-  }
-`;
+import { DashboardLayout } from './components/layout/DashboardLayout';
+import { DashboardHome } from './pages/dashboard/DashboardHome';
+import { ToastContainer } from './components/ui/ToastContainer';
+import { CalendarPage } from './pages/dashboard/CalendarPage';
+import { StudentsPage } from './pages/dashboard/StudentsPage';
+import { StatsPage } from './pages/dashboard/StatsPage';
+import { ProfilePage } from './pages/dashboard/ProfilePage';
+import { useEffect } from 'react';
+import { FuturisticThemeStyles } from './assets/styles/futuristic-theme';
 
 // Анимация для страниц
 const pageVariants = {
   initial: {
     opacity: 0,
-    y: 10,
+    y: 20,
   },
   in: {
     opacity: 1,
@@ -70,14 +28,14 @@ const pageVariants = {
   },
   out: {
     opacity: 0,
-    y: -10,
+    y: -20,
   },
 };
 
 const pageTransition = {
   type: 'tween',
-  ease: 'easeInOut',
-  duration: 0.3,
+  ease: [0.19, 1.0, 0.22, 1.0],
+  duration: 0.4,
 };
 
 // Компонент для анимированных страниц
@@ -143,57 +101,52 @@ const GuestRoute = ({ children }: { children: React.ReactNode }) => {
 // Компонент для анимированных маршрутов
 const AnimatedRoutes = () => {
   const location = useLocation();
-  
+  const { isAuthenticated, user } = useAuth();
+
+  // Сохраняем текущий путь в localStorage при изменении пути
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'TEACHER' && location.pathname.startsWith('/dashboard')) {
+      localStorage.setItem('lastTeacherPath', location.pathname);
+    }
+  }, [location.pathname, isAuthenticated, user]);
+
+  // Получаем сохраненный путь или используем /dashboard по умолчанию
+  const getLastTeacherPath = () => {
+    return localStorage.getItem('lastTeacherPath') || '/dashboard';
+  };
+
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         {/* Публичные маршруты */}
-        <Route path="/" element={<AnimatedPage><HomePage /></AnimatedPage>} />
-        
+        {/* Если TEACHER, редирект с / на последний сохраненный путь */}
+        <Route path="/" element={
+          isAuthenticated && user?.role === 'TEACHER'
+            ? <Navigate to={getLastTeacherPath()} />
+            : <AnimatedPage><HomePage /></AnimatedPage>
+        } />
+
         {/* Маршруты для гостей */}
-        <Route 
-          path="/login" 
-          element={
-            <GuestRoute>
-              <LoginPage />
-            </GuestRoute>
-          } 
-        />
-        <Route 
-          path="/register" 
-          element={
-            <GuestRoute>
-              <RegisterPage />
-            </GuestRoute>
-          } 
-        />
-        
-        {/* Защищенные маршруты */}
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <div>Здесь будет личный кабинет</div>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/tutors" 
-          element={
-            <ProtectedRoute>
-              <div>Функционал будет доступен скоро</div>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <div>Здесь будет профиль пользователя</div>
-            </ProtectedRoute>
-          } 
-        />
-        
+        <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+        <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+
+        {/* Защищённые маршруты для TEACHER */}
+        {isAuthenticated && user?.role === 'TEACHER' && (
+          <Route path="/dashboard" element={<DashboardLayout><DashboardHome /></DashboardLayout>} />
+        )}
+        {isAuthenticated && user?.role === 'TEACHER' && (
+          <Route path="/dashboard/calendar" element={<DashboardLayout><CalendarPage /></DashboardLayout>} />
+        )}
+        {isAuthenticated && user?.role === 'TEACHER' && (
+          <Route path="/dashboard/students" element={<DashboardLayout><StudentsPage /></DashboardLayout>} />
+        )}
+        {isAuthenticated && user?.role === 'TEACHER' && (
+          <Route path="/dashboard/stats" element={<DashboardLayout><StatsPage /></DashboardLayout>} />
+        )}
+        {isAuthenticated && user?.role === 'TEACHER' && (
+          <Route path="/dashboard/profile" element={<DashboardLayout><ProfilePage /></DashboardLayout>} />
+        )}
+
         {/* Маршрут для несуществующих страниц */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
@@ -204,12 +157,15 @@ const AnimatedRoutes = () => {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <GlobalStyle />
-        <Layout>
-          <AnimatedRoutes />
-        </Layout>
-      </AuthProvider>
+      <NotificationProvider>
+        <AuthProvider>
+          <FuturisticThemeStyles />
+          <Layout>
+            <AnimatedRoutes />
+          </Layout>
+          <ToastContainer />
+        </AuthProvider>
+      </NotificationProvider>
     </Router>
   );
 }

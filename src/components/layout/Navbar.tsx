@@ -11,7 +11,8 @@ const NavbarContainer = styled.nav`
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background-color: white;
+  background-color: #181a2a;
+  color: #e0e6f5;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
@@ -84,7 +85,8 @@ const MobileMenu = styled(motion.div)`
   width: 70%;
   max-width: 300px;
   height: 100vh;
-  background-color: white;
+  background-color: #23243a;
+  color: #e0e6f5;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
   padding: 2rem;
   z-index: 200;
@@ -170,38 +172,18 @@ export const Navbar = () => {
       </Logo>
       
       <NavLinks>
-        <NavLink to="/" $isActive={location.pathname === '/'}>
-          Главная
-        </NavLink>
-        
-        {isAuthenticated ? (
-          <>
-            {user?.role === 'STUDENT' && (
-              <NavLink to="/tutors" $isActive={location.pathname === '/tutors'}>
-                Скоро
-              </NavLink>
-            )}
-            
-            {user?.role === 'TEACHER' && (
-              <NavLink to="/profile" $isActive={location.pathname === '/profile'}>
-                Мой профиль
-              </NavLink>
-            )}
-            
-            <NavLink to="/dashboard" $isActive={location.pathname === '/dashboard'}>
-              Личный кабинет
-            </NavLink>
-            
-            <Button variant="outline" onClick={handleLogout}>
-              Выйти
-            </Button>
-          </>
+        {isAuthenticated && user?.role === 'TEACHER' ? (
+          <Button variant="outline" onClick={handleLogout}>
+            Выйти
+          </Button>
         ) : (
           <>
+            <NavLink to="/" $isActive={location.pathname === '/'}>
+              Главная
+            </NavLink>
             <NavLink to="/login" $isActive={location.pathname === '/login'}>
               Вход
             </NavLink>
-            
             <NavLink to="/register" $isActive={location.pathname === '/register'}>
               Регистрация
             </NavLink>

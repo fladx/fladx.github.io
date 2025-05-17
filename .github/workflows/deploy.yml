@@ -30,6 +30,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Update Vite config for production
+        run: |
+          sed -i 's|http://localhost:8080/api/v1|https://api.tutors.com/api/v1|g' vite.config.ts
+          cat vite.config.ts
+
       - name: Build
         run: npm run build
 
